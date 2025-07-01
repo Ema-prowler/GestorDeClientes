@@ -19,8 +19,21 @@ c.execute("""
           );
 """)
 
+def render_clientes():
+    rows = c.execute("SELECT * FROM cliente").fetchall()
+
+    tree.delete(*tree.get_children())
+    for row in rows:
+        tree.insert('', END, row[0], values=(row[1], row[2], row[3]))
+
+
+
 def insertar(cliente):
-    print(cliente)
+    c.execute("""
+               INSERT INTO cliente (nombre, telefono, empresa) VALUES (?, ?, ?)
+               """, (cliente['nombre'], cliente['telefono'], cliente['empresa']))
+    conn.commit()
+    render_clientes()
 
 def nuevo_cliente():
     def guardar():
@@ -66,8 +79,16 @@ def nuevo_cliente():
     top.mainloop()
 
 def eliminar_cliente():
-    pass
+    id = tree.selection()[0]
 
+    cliente = c.execute("SELECT * FROM cliente WHERE id = ?", (id, )).fetchone()
+    respuesta = messagebox.askokcancel('Seguro?', 'Estas seguro de querer eliminar el ' + cliente[1] + '?')
+    if respuesta:
+        c.execute("DELETE FROM cliente WHERE id = ?", (id, ))
+        conn.commit()
+        render_clientes()
+    else:
+        pass
 
 btn = Button(root, text='Nuevo Cliente', command=nuevo_cliente)
 btn.grid(column=0, row=0)
@@ -87,5 +108,6 @@ tree.heading('Telefono', text='Telefono')
 tree.heading('Empresa', text='Empresa')
 tree.grid(column=0, row=1, columnspan=2)
 
+render_clientes()
 
 root.mainloop()
